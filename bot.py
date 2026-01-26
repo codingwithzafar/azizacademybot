@@ -315,17 +315,29 @@ async def check(call: types.CallbackQuery):
     await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
 
 # ================== FAN → SINF ==================
+# ================== FAN → SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def choose_class(call: types.CallbackQuery):
     await call.answer()
     subject = call.data.split(":")[1]
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("1–6 sinf", callback_data=f"class:{subject}:junior")],
-        [InlineKeyboardButton("7–11 sinf", callback_data=f"class:{subject}:senior")]
+        [
+            InlineKeyboardButton(
+                text="1–6 sinf",
+                callback_data=f"class:{subject}:junior"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="7–11 sinf",
+                callback_data=f"class:{subject}:senior"
+            )
+        ]
     ])
 
     await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
+
 
 # ================== O‘QUVCHILAR ==================
 @dp.callback_query(lambda c: c.data.startswith("class:"))
