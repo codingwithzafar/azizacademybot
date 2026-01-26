@@ -18,6 +18,8 @@ SUBJECTS = [
     "Mental", "Pochemuchka", "Hamshiralik",
     "IT", "Kampyuter", "Loyiha"
 ]
+
+# ================== O‘QUVCHILAR ==================
 SPECIAL_STUDENTS = {
 
     # ================= ENGLISH =================
@@ -213,6 +215,8 @@ SPECIAL_STUDENTS = {
     ]
 }
 
+
+# ================== DATABASE ==================
 def init_db():
     with sqlite3.connect(DB_NAME) as db:
         db.execute("""
@@ -234,19 +238,29 @@ def start_voting():
     with sqlite3.connect(DB_NAME) as db:
         db.execute("DELETE FROM voting")
         db.execute("DELETE FROM votes")
-        db.execute(
-            "INSERT INTO voting (start_time) VALUES (?)",
-            (int(time.time()),)
-        )
+        db.execute("INSERT INTO voting VALUES (?)", (int(time.time()),))
 
 def is_voting_active():
     with sqlite3.connect(DB_NAME) as db:
-        row = db.execute(
-            "SELECT start_time FROM voting ORDER BY start_time DESC LIMIT 1"
-        ).fetchone()
+        row = db.execute("SELECT start_time FROM voting").fetchone()
         if not row:
             return False
         return time.time() < row[0] + VOTING_DURATION
+
+def get_remaining_time():
+    with sqlite3.connect(DB_NAME) as db:
+        row = db.execute("SELECT start_time FROM voting").fetchone()
+    if not row:
+        return None
+
+    remaining = int((row[0] + VOTING_DURATION) - time.time())
+    if remaining <= 0:
+        return None
+
+    d = remaining // 86400
+    h = (remaining % 86400) // 3600
+    m = (remaining % 3600) // 60
+    return f"⏳ Qolgan vaqt: {d} kun {h} soat {m} minut"
 
 # ================== BOT ==================
 bot = Bot(token=TOKEN)
@@ -255,13 +269,24 @@ dp = Dispatcher()
 # ================== START ==================
 @dp.message(Command("start"))
 async def start(msg: types.Message):
+    remaining = get_remaining_time()
 
     # 🔐 ADMIN
     if msg.from_user.id == ADMIN_ID:
         start_voting()
+        remaining = get_remaining_time()
+
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
+            for s in SUBJECTS
+        ])
+
         await msg.answer(
-            "✅ Ovoz berish BOSHLANDI!\n"
-            "⏳ Davomiyligi: 7 kun"
+            "🟢 <b>Ovoz yig‘ish BOSHLANDI!</b>\n\n"
+            f"{remaining}\n\n"
+            "👇 Fan tanlang:",
+            parse_mode="HTML",
+            reply_markup=kb
         )
         return
 
@@ -270,19 +295,35 @@ async def start(msg: types.Message):
         await msg.answer("⛔ Ovoz berish hozirda YOPIQ")
         return
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
-        [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
-        [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
-    ])
-    await msg.answer("Ikkala kanalga obuna bo‘ling:", reply_markup=kb)
+    if not await is_subscribed(msg.from_user.id):
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
+            [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
+            [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
+        ])
+        await msg.answer(
+            f"📢 Ovoz berish uchun obuna bo‘ling\n\n{remaining}",
+            reply_markup=kb
+        )
+        return
 
-# ================== OBUNA CHECK ==================
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
+        for s in SUBJECTS
+    ])
+
+    await msg.answer(
+        f"🗳 <b>Ovoz berish ochiq!</b>\n\n{remaining}\n\n👇 Fan tanlang:",
+        parse_mode="HTML",
+        reply_markup=kb
+    )
+
+# ================== OBUNA ==================
 async def is_subscribed(user_id):
     try:
         for ch in CHANNELS:
-            member = await bot.get_chat_member(ch, user_id)
-            if member.status not in ("member", "administrator", "creator"):
+            m = await bot.get_chat_member(ch, user_id)
+            if m.status not in ("member", "administrator", "creator"):
                 return False
         return True
     except:
@@ -291,63 +332,47 @@ async def is_subscribed(user_id):
 @dp.callback_query(lambda c: c.data == "check")
 async def check(call: types.CallbackQuery):
     await call.answer()
+    remaining = get_remaining_time()
 
-    if not is_voting_active():
-        await call.message.answer("⛔ Ovoz berish yakunlangan")
-        return
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
+        for s in SUBJECTS
+    ])
 
-    if not await is_subscribed(call.from_user.id):
-        await call.message.answer("❌ Avval obuna bo‘ling")
-        return
-
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
-            for s in SUBJECTS
-        ]
+    await call.message.answer(
+        f"🗳 <b>Ovoz berish ochiq!</b>\n\n{remaining}\n\n👇 Fan tanlang:",
+        parse_mode="HTML",
+        reply_markup=kb
     )
-    await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
 
 # ================== SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def choose_class(call: types.CallbackQuery):
-    await call.answer()
     subject = call.data.split(":")[1]
-
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="1–6 sinf", callback_data=f"class:{subject}:junior")],
-        [InlineKeyboardButton(text="7–11 sinf", callback_data=f"class:{subject}:senior")]
+        [InlineKeyboardButton("1–6 sinf", callback_data=f"class:{subject}:junior")],
+        [InlineKeyboardButton("7–11 sinf", callback_data=f"class:{subject}:senior")]
     ])
     await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
 
-# ================== O‘QUVCHILAR ==================
+# ================== O‘QUVCHI ==================
 @dp.callback_query(lambda c: c.data.startswith("class:"))
 async def show_students(call: types.CallbackQuery):
-    await call.answer()
     _, subject, level = call.data.split(":")
     students = SPECIAL_STUDENTS.get((subject, level), [])
 
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=s, callback_data=f"vote:{subject}:{level}:{i}")]
-            for i, s in enumerate(students)
-        ]
-    )
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(s, callback_data=f"vote:{subject}:{level}:{i}")]
+        for i, s in enumerate(students)
+    ])
     await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
 
 # ================== OVOZ ==================
 @dp.callback_query(lambda c: c.data.startswith("vote:"))
 async def vote(call: types.CallbackQuery):
-    await call.answer()
-
-    if not is_voting_active():
-        await call.message.answer("⛔ Ovoz berish yakunlangan")
-        return
-
     _, subject, level, idx = call.data.split(":")
     idx = int(idx)
-    students = SPECIAL_STUDENTS[(subject, level)]
-    student = students[idx]
+    student = SPECIAL_STUDENTS[(subject, level)][idx]
 
     try:
         with sqlite3.connect(DB_NAME) as db:
@@ -359,24 +384,7 @@ async def vote(call: types.CallbackQuery):
         await call.message.answer("⚠️ Siz allaqachon ovoz bergansiz")
         return
 
-    with sqlite3.connect(DB_NAME) as db:
-        rows = db.execute("""
-            SELECT student, COUNT(*)
-            FROM votes
-            WHERE subject=? AND level=?
-            GROUP BY student
-        """, (subject, level)).fetchall()
-
-    vote_map = {s: c for s, c in rows}
-    total = sum(vote_map.values())
-
-    text = f"📊 {subject} | {'1–6' if level=='junior' else '7–11'} sinf:\n\n"
-    for s in students:
-        c = vote_map.get(s, 0)
-        p = (c / total * 100) if total else 0
-        text += f"{s} — {c} ta ({p:.1f}%)\n"
-
-    await call.message.answer("✅ Ovozingiz qabul qilindi!\n\n" + text)
+    await call.message.answer("✅ Ovozingiz qabul qilindi!")
 
 # ================== RUN ==================
 async def main():
