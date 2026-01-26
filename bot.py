@@ -23,6 +23,7 @@ SUBJECTS = [
 # ================== O‘QUVCHILAR ==================
 SPECIAL_STUDENTS = {
 
+    # ================= ENGLISH =================
     ("English", "junior"): [
         "ALIBOYEVA SADOQAT 5-maktab 7-sinf (Olmazor)",
         "ULUGBEKOV FAYOZBEK 25-maktab 6-sinf (Dostobod)",
@@ -51,8 +52,170 @@ SPECIAL_STUDENTS = {
         "ORIFJONOVA SOLIHA 1-maktab 8-sinf (Gulbaxor)"
     ],
 
-    # (qolgan fanlar xuddi shu tartibda qoldi)
+    # ================= RUS =================
+    ("Rus", "junior"): [
+        "OBIDJONOVA MASUMA 29-maktab 8-sinf (Olmazor)",
+        "AKBARALIYEV SHOXJAHON 24-maktab 6-sinf (Dostobod)",
+        "RAXMONBERDIYEV IBROHIM 2-maktab 3-sinf (Chinoz)",
+        "FAXRIDDINOV SHOXRUZ 5-maktab 4-sinf (Niyozbosh)",
+        "AYTMUXAMMEDOVA MUBINA 3-maktab 6-sinf (Kids 2)",
+        "NURIDDINOV BEXRUZ 1-maktab 4-sinf (Kasblar maktabi)",
+        "TURDIBAYEVA MADINA 51-maktab 5B-sinf (Mevazor)",
+        "ALIMKULOVA SHIRIN 19-maktab 7-sinf (Xalqobod)",
+        "XASANBOYEV SAMANDAR 1-maktab 4-sinf (Kids 1)",
+        "PO‘LATBOYEV SARDOR 45-maktab 5-sinf (Gulbahor)"
+    ],
+
+    ("Rus", "senior"): [
+        "SHAVKATOVA SHABNAM 15-maktab 8-sinf (Olmazor)",
+        "ABDUJABBAROVA SHIRIN 28-maktab 8-sinf (Xalqobod)",
+        "ORIPBOYEV BERDIYOR 10-maktab 11-sinf (Dostobod)",
+        "MARATOVA JASMINA 50-maktab 7-sinf (Paxtazor)",
+        "MAMADALIYEV BEXRUZ 1-maktab 10-sinf (Kids 2)",
+        "MAXSUDOVA SHAXZODA 6-maktab 8-sinf (Kasblar maktabi)",
+        "EGAMKULOV ABBOS 34-maktab 6-sinf (Mevazor)",
+        "ESENBEKOVA MAFTUNA 11-maktab 10-sinf (Chinoz)",
+        "FAXRIDDINOV SHOXRUZ 5-maktab 4-sinf (Niyozbosh)",
+        "OLIMBOYEVA PARIZODA 14-maktab 7-sinf (Kids 1)",
+        "ORIFJONOVA SOLIHA 1-maktab 8-sinf (Gulbahor)"
+    ],
+
+    # ================= KOREYS =================
+    ("Koreys", "junior"): [
+        "JUMANAZAROVA FARIZA 9-maktab 3-sinf (Olmazor)",
+        "QURBONOV JASUR 33-maktab 4-sinf (Niyozbosh)",
+        "ABDUQAYUMOV ANVAR 6-maktab 7-sinf (Kasblar maktabi)",
+        "GOFURJONOVA NOZIMA 1-maktab 7-sinf (Gulbahor)"
+    ],
+
+    ("Koreys", "senior"): [
+        "ARIKULOVA SHIRIN 5-maktab 11-sinf (Olmazor)",
+        "ISTAMBEKOVA DILNOZA 6-maktab 11-sinf (Kasblar maktabi)",
+        "ALISHEROVA SEVINCH 26-maktab 7-sinf (Chinoz)",
+        "ASQAROVA SHIRIN IDUM 8-sinf (Niyozbosh)",
+        "XABIBULLAYEVA MALIKA 44-maktab 7-sinf (Gulbahor)"
+    ],
+
+    # ================= ARAB =================
+    ("Arab", "junior"): [
+        "GAYRATOV SHAMSHOD 5-maktab 4-sinf (Kasblar maktabi)",
+        "MASHRAPOV SHOXRUZ 33-maktab 3V-sinf (Mevazor)",
+        "ABDUROUFOVA SHAXZODA 28-maktab 7-sinf (Xalqobod)",
+        "TOXIRJONOVA DILYORA 1-maktab 5-sinf (Niyozbosh)",
+        "RAZMATOVA AROFAR 3-maktab 5-sinf (Kids 2)",
+        "XOLBOYEV AZIZJON 13-maktab 5-sinf (Chinoz)",
+        "ABDUXALILOV ABUBAKIR 0-maktab 0-sinf (Kids 1)",
+        "ISMOILJONOV IBROXIM 45-maktab 6-sinf (Gulbahor)"
+    ],
+
+    ("Arab", "senior"): [
+        "KOMILOV OZODBEK noma'lum-maktab noma'lum-sinf (Mevazor)",
+        "MAXSUTALIYEVA MAFTUNA 28-maktab 8-sinf (Xalqobod)",
+        "SOLIYEVA SHODIYAXON 13-maktab 11-sinf (Kasblar maktabi)",
+        "YOQUBJONOVA UMIDA 23-maktab 9-sinf (Niyozbosh)",
+        "ABDURAXMONOVA IRODA 27-maktab 11-sinf (Kids 2)",
+        "XAMZAYEVA SUG‘DIYONA 40-maktab 10-sinf (Chinoz)",
+        "MURODJONOVA E‘ZOZA 1-maktab 8-sinf (Kids 1)",
+        "XABIBULLAYEVA MALIKA 44-maktab 7-sinf (Gulbahor)"
+    ],
+
+    # ================= MATEMATIKA =================
+    ("Matematika", "junior"): [
+        "ABDUJALILOV ANVARBEK noma'lum-maktab noma'lum-sinf (Olmazor)",
+        "SHORASULOV SHOAZIM 40-maktab 5-sinf (Chinoz)",
+        "ERMATOVA SAMIRA 9-maktab 6-sinf (Niyozbosh)",
+        "BAXROMJONOV AVZALBEK 6-maktab 4-sinf (Kasblar maktabi)",
+        "OBIDOV ISLOM 51-maktab 4A-sinf (Mevazor)"
+    ],
+
+    ("Matematika", "senior"): [
+        "SULAYMONOV OZODBEK 46-maktab 11-sinf (Olmazor)",
+        "TURONOV OZODBEK noma'lum-maktab noma'lum-sinf (Dostobod)",
+        "AXMADOV BARKAMOL 9-maktab 8-sinf (Kasblar maktabi)",
+        "ABDUHAFIZOV NURBOL 36-maktab 7-sinf (Mevazor)",
+        "RISBOYEVA XIDOYAT 2-maktab 11-sinf (Chinoz)",
+        "ALISHEROV XASAN 27-maktab 7-sinf (Niyozbosh)"
+    ],
+
+    # ================= MENTAL =================
+    ("Mental", "junior"): [
+        "RAVSHANOV FAYZULLOX 46-maktab 5-sinf (Olmazor)",
+        "LUKMANOV ABDULLOH 3-maktab 4-sinf (Kids 2)"
+    ],
+
+    ("Mental", "senior"): [
+        "ALIXAYDAROV MANSUR 9-maktab 6-sinf (Olmazor)",
+        "ABDUJABBOROVA MUSLIMA 44-maktab 6-sinf (Kids 2)"
+    ],
+
+    # ================= POCHEMUCHKA =================
+    ("Pochemuchka", "junior"): [
+        "MAXMUDOV ZIYODULLA 0-maktab 0-sinf (Olmazor)",
+        "ABDUSALOMOVA DILZODA noma'lum-maktab noma'lum-sinf (Kids 2)",
+        "BAXODIROVA UMIDA 0-maktab 0-sinf (Kasblar maktabi)"
+    ],
+
+    # ================= HAMSHIRALIK =================
+    ("Hamshiralik", "junior"): [
+        "RAVSHANOV FAYZULLOX 46-maktab 5-sinf (Olmazor)",
+        "MAMARASULOVA DILRABO 56-maktab 10-sinf (Xalqobod)",
+        "MAXAMADKARIMOVA FOTIMA 0-maktab 0-sinf (Kasblar maktabi)",
+        "IBRAGIMOVA ZILOLA 1-maktab 10-sinf (Gulbahor)"
+    ],
+
+    ("Hamshiralik", "senior"): [
+        "BAXODIROVA AZIZA 9-maktab 10-sinf (Olmazor)",
+        "MIRGAYAZOVA MAFTUNA noma'lum-maktab noma'lum-sinf (Kids 2)",
+        "ERGASHEVA RUXSHONA 0-maktab 0-sinf (Kasblar maktabi)",
+        "ERGASHBAYEVA SARVINOZ 36-maktab 10A-sinf (Mevazor)",
+        "ABDUSODIQOVA SHAXZODA 46-maktab 10-sinf (Paxtazor)",
+        "TOXIROVA SHAXZODA 11-maktab 10-sinf (Dostobod)",
+        "SADRIDDINOVA MADINABONU 23-maktab 9-sinf (Chinoz)",
+        "MANSUROVA UMIDA Bitirgan (Xalqobod)",
+        "SUNNATILLAYEVA SHODIYA 48-maktab 10-sinf (Gulbahor)"
+    ],
+
+    # ================= IT =================
+    ("IT", "junior"): [
+        "DONIYOROV MUXAMMADALI 9-maktab 7-sinf (Olmazor)",
+        "OLIMOV QALQONBEK 56-maktab 7-sinf (Xalqobod)",
+        "YUSUPJONOV ROVSHAN 3-maktab 8-sinf (Kasblar maktabi)",
+        "AXMEDOV KAMOLIDDIN 9-maktab 6-sinf (Chinoz)",
+        "KALANDAROV ALISHER 5-maktab 6-sinf (Gulbahor)"
+    ],
+
+    ("IT", "senior"): [
+        "QOBILJONOV FOZILJON 42-maktab 11-sinf (Olmazor)",
+        "KOMILOV NURMUHAMMAD 28-maktab 8-sinf (Xalqobod)",
+        "AYBEKOV DALER 2-maktab 8-sinf (Kasblar maktabi)",
+        "SAIDALOMOV SAIDJAXON 2-maktab 9-sinf (Chinoz)",
+        "UMURZOQOV SAMANDAR 1-maktab 8-sinf (Gulbahor)"
+    ],
+
+    # ================= KAMPYUTER =================
+    ("Kampyuter", "junior"): [
+        "ERKINOVA ASILABONU 17-maktab 5-sinf (Olmazor)",
+        "AKBARALIYEV BEKZOD 9-maktab 5-sinf (Chinoz)",
+        "ABDUKARIMOV SANJAR 14-maktab 9-sinf (Kasblar maktabi)",
+        "KUZIYEV MUHAMMAD 1-maktab 6-sinf (Gulbahor)"
+    ],
+
+    ("Kampyuter", "senior"): [
+        "SULTONMURODOV BEXRUZ 15-maktab 9-sinf (Olmazor)",
+        "RAXMATULLAYEV UBAYDULLO 40-maktab 7-sinf (Chinoz)",
+        "RASULOV DAVRON 10-maktab 7-sinf (Kasblar maktabi)",
+        "ULUGBERDIYEV JAVLONBEK 48-maktab 7-sinf (Gulbahor)"
+    ],
+
+    # ================= LOYIHA =================
+    ("Loyiha", "junior"): [
+        "SHERALIYEV ISMOIL 27-maktab 1-sinf",
+        "KOMILJONOV ZUXRIDDIN 11-maktab 2-sinf",
+        "BAXTIYOROVA E'ZOZA 27-maktab 3-sinf",
+        "TURSUNALIYEV NODIRBEK 16-maktab 4-sinf"
+    ]
 }
+
 
 # ================== DATABASE ==================
 def init_db():
@@ -232,3 +395,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
