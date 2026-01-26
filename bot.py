@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # ================== SOZLAMALAR ==================
-TOKEN = "8379681025:AAG0MgojPZSmHAV7rJbl7_I8M5o04Sz2UA4"
+TOKEN = "TOKENINGNI_BU_YERGA_QO‘Y"
 ADMIN_ID = 6140962854
 DB_NAME = "votes.db"
 VOTING_DURATION = 7 * 24 * 60 * 60  # 7 kun
@@ -234,9 +234,11 @@ def init_db():
         """)
 
 def start_voting():
+    """Agar ovoz allaqachon boshlangan bo‘lsa — qayta boshlamaydi"""
     with sqlite3.connect(DB_NAME) as db:
-        db.execute("DELETE FROM voting")
-        db.execute("DELETE FROM votes")
+        row = db.execute("SELECT start_time FROM voting").fetchone()
+        if row:
+            return
         db.execute("INSERT INTO voting VALUES (?)", (int(time.time()),))
 
 def is_voting_active():
@@ -248,11 +250,11 @@ def get_remaining_time():
     with sqlite3.connect(DB_NAME) as db:
         row = db.execute("SELECT start_time FROM voting").fetchone()
     if not row:
-        return None
+        return "⛔ Ovoz berish boshlanmagan"
 
     remaining = int((row[0] + VOTING_DURATION) - time.time())
     if remaining <= 0:
-        return None
+        return "⛔ Ovoz berish yakunlangan"
 
     d = remaining // 86400
     h = (remaining % 86400) // 3600
@@ -266,8 +268,7 @@ dp = Dispatcher()
 # ================== START ==================
 @dp.message(Command("start"))
 async def start(msg: types.Message):
-    remaining = get_remaining_time()
-
+    # ADMIN
     if msg.from_user.id == ADMIN_ID:
         start_voting()
         remaining = get_remaining_time()
@@ -284,10 +285,12 @@ async def start(msg: types.Message):
         )
         return
 
+    # USER
     if not is_voting_active():
-        await msg.answer("⛔ Ovoz berish hozirda YOPIQ")
+        await msg.answer("⛔ Ovoz berish hozirda yopiq")
         return
 
+    remaining = get_remaining_time()
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
         for s in SUBJECTS
@@ -324,11 +327,13 @@ async def show_students(call: types.CallbackQuery):
 
     await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
 
-# ================== OVOZ ==================
+# ================== OVOZ + NATIJA ==================
 @dp.callback_query(lambda c: c.data.startswith("vote:"))
 async def vote(call: types.CallbackQuery):
     _, subject, level, idx = call.data.split(":")
-    student = SPECIAL_STUDENTS[(subject, level)][int(idx)]
+    idx = int(idx)
+    students = SPECIAL_STUDENTS[(subject, level)]
+    student = students[idx]
 
     try:
         with sqlite3.connect(DB_NAME) as db:
@@ -340,7 +345,29 @@ async def vote(call: types.CallbackQuery):
         await call.message.answer("⚠️ Siz allaqachon ovoz bergansiz")
         return
 
-    await call.message.answer("✅ Ovozingiz qabul qilindi!")
+    # ======= STATISTIKA =======
+    with sqlite3.connect(DB_NAME) as db:
+        rows = db.execute("""
+            SELECT student, COUNT(*)
+            FROM votes
+            WHERE subject=? AND level=?
+            GROUP BY student
+        """, (subject, level)).fetchall()
+
+    vote_map = {s: c for s, c in rows}
+    total = sum(vote_map.values())
+
+    text = f"📊 <b>{subject}</b> | {'1–6' if level=='junior' else '7–11'} sinf\n\n"
+
+    for s in students:
+        c = vote_map.get(s, 0)
+        p = (c / total * 100) if total else 0
+        text += f"{s}\n➡️ {c} ta ovoz ({p:.1f}%)\n\n"
+
+    await call.message.answer(
+        "✅ <b>Ovozingiz qabul qilindi!</b>\n\n" + text,
+        parse_mode="HTML"
+    )
 
 # ================== RUN ==================
 async def main():
