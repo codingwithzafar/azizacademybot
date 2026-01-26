@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 TOKEN = "8379681025:AAG0MgojPZSmHAV7rJbl7_I8M5o04Sz2UA4"
 ADMIN_ID = 6140962854
 DB_NAME = "votes.db"
-VOTING_DURATION = 7 * 24 * 60 * 60  # 7 kun
+VOTING_DURATION = 60 * 60  # 1 soat
 
 CHANNELS = ["@azizacademy_uz", "@codingwith_ulugbek"]
 
@@ -231,13 +231,16 @@ def init_db():
         """)
 
 def start_voting():
+    now = int(time.time())
     with sqlite3.connect(DB_NAME) as db:
         db.execute("DELETE FROM voting")
         db.execute("DELETE FROM votes")
         db.execute(
             "INSERT INTO voting (start_time) VALUES (?)",
-            (int(time.time()),)
+            (now,)
         )
+    return now
+
 
 def is_voting_active():
     with sqlite3.connect(DB_NAME) as db:
@@ -258,10 +261,18 @@ async def start(msg: types.Message):
 
     # 🔐 ADMIN
     if msg.from_user.id == ADMIN_ID:
-        start_voting()
+        start_time = start_voting()
+        end_time = start_time + VOTING_DURATION
+
+        end_text = time.strftime(
+            "%d-%m-%Y %H:%M:%S",
+            time.localtime(end_time)
+        )
+
         await msg.answer(
             "✅ Ovoz berish BOSHLANDI!\n"
-            "⏳ Davomiyligi: 7 kun"
+            "⏳ Davomiyligi: 1 soat\n"
+            f"🕒 Tugash vaqti: {end_text}"
         )
         return
 
@@ -276,6 +287,7 @@ async def start(msg: types.Message):
         [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
     ])
     await msg.answer("Ikkala kanalga obuna bo‘ling:", reply_markup=kb)
+
 
 async def is_subscribed(user_id):
     try:
