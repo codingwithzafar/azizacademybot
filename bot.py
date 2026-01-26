@@ -11,7 +11,7 @@ ADMIN_ID = 6140962854
 DB_NAME = "votes.db"
 VOTING_DURATION = 7 * 24 * 60 * 60  # 7 kun
 
-CHANNELS = ["@azizacademy_uz", "@codingwith_ulugbek"]
+CHANNELS = ["@abdulaziz_avazovichY", "@alaziz_academy"]
 
 SUBJECTS = [
     "English", "Rus", "Koreys", "Arab", "Matematika",
@@ -292,8 +292,8 @@ async def start(msg: types.Message):
         return
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
-        [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
+        [InlineKeyboardButton(text="1-kanal", url="https://t.me/abdulaziz_avazovichY")],
+        [InlineKeyboardButton(text="2-kanal", url="https://t.me/alaziz_academy")],
         [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
     ])
 
@@ -413,3 +413,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
