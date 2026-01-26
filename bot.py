@@ -1,4 +1,3 @@
-
 import asyncio
 import sqlite3
 import time
@@ -19,6 +18,8 @@ SUBJECTS = [
     "Mental", "Pochemuchka", "Hamshiralik",
     "IT", "Kampyuter", "Loyiha"
 ]
+
+# ================== O‘QUVCHILAR ==================
 SPECIAL_STUDENTS = {
 
     # ================= ENGLISH =================
@@ -214,8 +215,15 @@ SPECIAL_STUDENTS = {
     ]
 }
 
+
+# ================== DATABASE ==================
 def init_db():
     with sqlite3.connect(DB_NAME) as db:
+        db.execute("""
+        CREATE TABLE IF NOT EXISTS voting (
+            start_time INTEGER
+        )
+        """)
         db.execute("""
         CREATE TABLE IF NOT EXISTS votes (
             user_id INTEGER,
@@ -225,29 +233,33 @@ def init_db():
             UNIQUE(user_id, subject, level)
         )
         """)
-        db.execute("""
-        CREATE TABLE IF NOT EXISTS voting (
-            start_time INTEGER
-        )
-        """)
 
 def start_voting():
     with sqlite3.connect(DB_NAME) as db:
-        db.execute("DELETE FROM voting")
-        db.execute("DELETE FROM votes")
-        db.execute(
-            "INSERT INTO voting (start_time) VALUES (?)",
-            (int(time.time()),)
-        )
+        row = db.execute("SELECT start_time FROM voting").fetchone()
+        if row:
+            return
+        db.execute("INSERT INTO voting VALUES (?)", (int(time.time()),))
 
 def is_voting_active():
     with sqlite3.connect(DB_NAME) as db:
-        row = db.execute(
-            "SELECT start_time FROM voting ORDER BY start_time DESC LIMIT 1"
-        ).fetchone()
+        row = db.execute("SELECT start_time FROM voting").fetchone()
         if not row:
             return False
         return time.time() < row[0] + VOTING_DURATION
+
+def remaining_time():
+    with sqlite3.connect(DB_NAME) as db:
+        row = db.execute("SELECT start_time FROM voting").fetchone()
+    if not row:
+        return ""
+    r = int((row[0] + VOTING_DURATION) - time.time())
+    if r <= 0:
+        return "⛔ Ovoz berish yakunlangan"
+    d = r // 86400
+    h = (r % 86400) // 3600
+    m = (r % 3600) // 60
+    return f"⏳ Qolgan vaqt: {d} kun {h} soat {m} minut"
 
 # ================== BOT ==================
 bot = Bot(token=TOKEN)
@@ -261,8 +273,9 @@ async def start(msg: types.Message):
     if msg.from_user.id == ADMIN_ID:
         start_voting()
         await msg.answer(
-            "✅ Ovoz berish BOSHLANDI!\n"
-            "⏳ Davomiyligi: 7 kun"
+            "✅ <b>Ovoz berish BOSHLANDI!</b>\n"
+            "⏳ Davomiyligi: 7 kun",
+            parse_mode="HTML"
         )
         return
 
@@ -271,6 +284,13 @@ async def start(msg: types.Message):
         await msg.answer("⛔ Ovoz berish hozirda YOPIQ")
         return
 
+    await msg.answer(
+        "✅ <b>Ovoz berish BOSHLANDI!</b>\n"
+        "⏳ Davomiyligi: 7 kun\n\n"
+        + remaining_time(),
+        parse_mode="HTML"
+    )
+
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
         [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
@@ -278,7 +298,7 @@ async def start(msg: types.Message):
     ])
     await msg.answer("Ikkala kanalga obuna bo‘ling:", reply_markup=kb)
 
-# ================== OBUNA CHECK ==================
+# ================== OBUNA TEKSHIRISH ==================
 async def is_subscribed(user_id):
     try:
         for ch in CHANNELS:
@@ -293,12 +313,8 @@ async def is_subscribed(user_id):
 async def check(call: types.CallbackQuery):
     await call.answer()
 
-    if not is_voting_active():
-        await call.message.answer("⛔ Ovoz berish yakunlangan")
-        return
-
     if not await is_subscribed(call.from_user.id):
-        await call.message.answer("❌ Avval obuna bo‘ling")
+        await call.message.answer("❌ Avval kanallarga obuna bo‘ling")
         return
 
     kb = InlineKeyboardMarkup(
@@ -312,19 +328,16 @@ async def check(call: types.CallbackQuery):
 # ================== SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def choose_class(call: types.CallbackQuery):
-    await call.answer()
     subject = call.data.split(":")[1]
-
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="1–6 sinf", callback_data=f"class:{subject}:junior")],
         [InlineKeyboardButton(text="7–11 sinf", callback_data=f"class:{subject}:senior")]
     ])
     await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
 
-# ================== O‘QUVCHILAR ==================
+# ================== O‘QUVCHI ==================
 @dp.callback_query(lambda c: c.data.startswith("class:"))
 async def show_students(call: types.CallbackQuery):
-    await call.answer()
     _, subject, level = call.data.split(":")
     students = SPECIAL_STUDENTS.get((subject, level), [])
 
@@ -336,15 +349,9 @@ async def show_students(call: types.CallbackQuery):
     )
     await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
 
-# ================== OVOZ ==================
+# ================== OVOZ + STATISTIKA ==================
 @dp.callback_query(lambda c: c.data.startswith("vote:"))
 async def vote(call: types.CallbackQuery):
-    await call.answer()
-
-    if not is_voting_active():
-        await call.message.answer("⛔ Ovoz berish yakunlangan")
-        return
-
     _, subject, level, idx = call.data.split(":")
     idx = int(idx)
     students = SPECIAL_STUDENTS[(subject, level)]
@@ -371,11 +378,11 @@ async def vote(call: types.CallbackQuery):
     vote_map = {s: c for s, c in rows}
     total = sum(vote_map.values())
 
-    text = f"📊 {subject} | {'1–6' if level=='junior' else '7–11'} sinf:\n\n"
+    text = f"📊 {subject} | {'1–6' if level=='junior' else '7–11'} sinf\n\n"
     for s in students:
         c = vote_map.get(s, 0)
         p = (c / total * 100) if total else 0
-        text += f"{s} — {c} ta ({p:.1f}%)\n"
+        text += f"{s}\n➡️ {c} ta ovoz ({p:.1f}%)\n\n"
 
     await call.message.answer("✅ Ovozingiz qabul qilindi!\n\n" + text)
 
@@ -386,4 +393,4 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())
