@@ -1,6 +1,7 @@
 import asyncio
 import sqlite3
 import time
+
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -19,7 +20,7 @@ SUBJECTS = [
     "IT", "Kampyuter", "Loyiha"
 ]
 
-# ================== O‘QUVCHILAR (QISQARTIRILDI) ==================
+# ================== O‘QUVCHILAR ==================
 SPECIAL_STUDENTS = {
 
     # ================= ENGLISH =================
@@ -215,7 +216,6 @@ SPECIAL_STUDENTS = {
     ]
 }
 
-
 # ================== DATABASE ==================
 def init_db():
     with sqlite3.connect(DB_NAME) as db:
@@ -234,48 +234,25 @@ def init_db():
         )
         """)
 
-# ================== VAQT LOGIKASI ==================
-def get_start_time():
+def start_voting():
     with sqlite3.connect(DB_NAME) as db:
-        row = db.execute(
-            "SELECT start_time FROM voting ORDER BY start_time ASC LIMIT 1"
-        ).fetchone()
-        return row[0] if row else None
-
-
-def start_voting_once():
-    if get_start_time() is not None:
-        return False
-
-    with sqlite3.connect(DB_NAME) as db:
+        db.execute("DELETE FROM voting")
+        db.execute("DELETE FROM votes")
         db.execute(
             "INSERT INTO voting (start_time) VALUES (?)",
             (int(time.time()),)
         )
-    return True
-
-
-def get_remaining_time():
-    start_time = get_start_time()
-    if not start_time:
-        return "⛔ Ovoz berish boshlanmagan"
-
-    remaining = int(start_time + VOTING_DURATION - time.time())
-    if remaining <= 0:
-        return "⛔ Ovoz berish yakunlangan"
-
-    days = remaining // 86400
-    hours = (remaining % 86400) // 3600
-    minutes = (remaining % 3600) // 60
-
-    return f"⏳ Qolgan vaqt: {days} kun {hours} soat {minutes} minut"
-
 
 def is_voting_active():
-    start_time = get_start_time()
-    if not start_time:
+    with sqlite3.connect(DB_NAME) as db:
+        row = db.execute(
+            "SELECT start_time FROM voting ORDER BY start_time DESC LIMIT 1"
+        ).fetchone()
+
+    if not row:
         return False
-    return time.time() < start_time + VOTING_DURATION
+
+    return time.time() < row[0] + VOTING_DURATION
 
 # ================== BOT ==================
 bot = Bot(token=TOKEN)
@@ -284,40 +261,31 @@ dp = Dispatcher()
 # ================== START ==================
 @dp.message(Command("start"))
 async def start(msg: types.Message):
-    remaining = get_remaining_time()
 
     # 🔐 ADMIN
     if msg.from_user.id == ADMIN_ID:
-        started = start_voting_once()
-
-        if started:
-            await msg.answer(
-                "✅ Ovoz berish BOSHLANDI!\n\n" + remaining
-            )
-        else:
-            await msg.answer(
-                "⚠️ Ovoz berish allaqachon BOSHLANGAN!\n\n" + remaining
-            )
+        start_voting()
+        await msg.answer(
+            "✅ Ovoz berish BOSHLANDI!\n"
+            "⏳ Davomiyligi: 7 kun"
+        )
         return
 
     # 👤 USER
-    if get_start_time() is None:
+    if not is_voting_active():
         await msg.answer("⛔ Ovoz berish hozirda YOPIQ")
         return
-
-    await msg.answer(
-        "✅ Ovoz berish BOSHLANGAN!\n\n" + remaining
-    )
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
         [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
         [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
     ])
+
     await msg.answer("Ikkala kanalga obuna bo‘ling:", reply_markup=kb)
 
 # ================== OBUNA CHECK ==================
-async def is_subscribed(user_id):
+async def is_subscribed(user_id: int) -> bool:
     try:
         for ch in CHANNELS:
             member = await bot.get_chat_member(ch, user_id)
@@ -326,7 +294,6 @@ async def is_subscribed(user_id):
         return True
     except:
         return False
-
 
 @dp.callback_query(lambda c: c.data == "check")
 async def check(call: types.CallbackQuery):
@@ -340,13 +307,84 @@ async def check(call: types.CallbackQuery):
         await call.message.answer("❌ Avval obuna bo‘ling")
         return
 
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
-            for s in SUBJECTS
-        ]
-    )
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
+        for s in SUBJECTS
+    ])
+
     await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
+
+# ================== FAN → SINF ==================
+@dp.callback_query(lambda c: c.data.startswith("sub:"))
+async def choose_class(call: types.CallbackQuery):
+    await call.answer()
+    subject = call.data.split(":")[1]
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton("1–6 sinf", callback_data=f"class:{subject}:junior")],
+        [InlineKeyboardButton("7–11 sinf", callback_data=f"class:{subject}:senior")]
+    ])
+
+    await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
+
+# ================== O‘QUVCHILAR ==================
+@dp.callback_query(lambda c: c.data.startswith("class:"))
+async def show_students(call: types.CallbackQuery):
+    await call.answer()
+    _, subject, level = call.data.split(":")
+
+    students = SPECIAL_STUDENTS.get((subject, level), [])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=s, callback_data=f"vote:{subject}:{level}:{i}")]
+        for i, s in enumerate(students)
+    ])
+
+    await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
+
+# ================== OVOZ ==================
+@dp.callback_query(lambda c: c.data.startswith("vote:"))
+async def vote(call: types.CallbackQuery):
+    await call.answer()
+
+    if not is_voting_active():
+        await call.message.answer("⛔ Ovoz berish yakunlangan")
+        return
+
+    _, subject, level, idx = call.data.split(":")
+    idx = int(idx)
+
+    students = SPECIAL_STUDENTS[(subject, level)]
+    student = students[idx]
+
+    try:
+        with sqlite3.connect(DB_NAME) as db:
+            db.execute(
+                "INSERT INTO votes VALUES (?,?,?,?)",
+                (call.from_user.id, subject, level, student)
+            )
+    except sqlite3.IntegrityError:
+        await call.message.answer("⚠️ Siz allaqachon ovoz bergansiz")
+        return
+
+    with sqlite3.connect(DB_NAME) as db:
+        rows = db.execute("""
+            SELECT student, COUNT(*)
+            FROM votes
+            WHERE subject=? AND level=?
+            GROUP BY student
+        """, (subject, level)).fetchall()
+
+    vote_map = dict(rows)
+    total = sum(vote_map.values())
+
+    text = f"📊 {subject} | {'1–6' if level=='junior' else '7–11'} sinf:\n\n"
+    for s in students:
+        c = vote_map.get(s, 0)
+        p = (c / total * 100) if total else 0
+        text += f"{s} — {c} ta ({p:.1f}%)\n"
+
+    await call.message.answer("✅ Ovozingiz qabul qilindi!\n\n" + text)
 
 # ================== RUN ==================
 async def main():
@@ -356,4 +394,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
