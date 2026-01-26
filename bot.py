@@ -215,7 +215,6 @@ SPECIAL_STUDENTS = {
     ]
 }
 
-
 # ================== DATABASE ==================
 def init_db():
     with sqlite3.connect(DB_NAME) as db:
@@ -243,9 +242,7 @@ def start_voting():
 def is_voting_active():
     with sqlite3.connect(DB_NAME) as db:
         row = db.execute("SELECT start_time FROM voting").fetchone()
-        if not row:
-            return False
-        return time.time() < row[0] + VOTING_DURATION
+        return row and time.time() < row[0] + VOTING_DURATION
 
 def get_remaining_time():
     with sqlite3.connect(DB_NAME) as db:
@@ -271,7 +268,6 @@ dp = Dispatcher()
 async def start(msg: types.Message):
     remaining = get_remaining_time()
 
-    # 🔐 ADMIN
     if msg.from_user.id == ADMIN_ID:
         start_voting()
         remaining = get_remaining_time()
@@ -282,29 +278,14 @@ async def start(msg: types.Message):
         ])
 
         await msg.answer(
-            "🟢 <b>Ovoz yig‘ish BOSHLANDI!</b>\n\n"
-            f"{remaining}\n\n"
-            "👇 Fan tanlang:",
+            f"🟢 <b>Ovoz yig‘ish BOSHLANDI!</b>\n\n{remaining}",
             parse_mode="HTML",
             reply_markup=kb
         )
         return
 
-    # 👤 USER
     if not is_voting_active():
         await msg.answer("⛔ Ovoz berish hozirda YOPIQ")
-        return
-
-    if not await is_subscribed(msg.from_user.id):
-        kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="1-kanal", url="https://t.me/azizacademy_uz")],
-            [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
-            [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
-        ])
-        await msg.answer(
-            f"📢 Ovoz berish uchun obuna bo‘ling\n\n{remaining}",
-            reply_markup=kb
-        )
         return
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -313,34 +294,7 @@ async def start(msg: types.Message):
     ])
 
     await msg.answer(
-        f"🗳 <b>Ovoz berish ochiq!</b>\n\n{remaining}\n\n👇 Fan tanlang:",
-        parse_mode="HTML",
-        reply_markup=kb
-    )
-
-# ================== OBUNA ==================
-async def is_subscribed(user_id):
-    try:
-        for ch in CHANNELS:
-            m = await bot.get_chat_member(ch, user_id)
-            if m.status not in ("member", "administrator", "creator"):
-                return False
-        return True
-    except:
-        return False
-
-@dp.callback_query(lambda c: c.data == "check")
-async def check(call: types.CallbackQuery):
-    await call.answer()
-    remaining = get_remaining_time()
-
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
-        for s in SUBJECTS
-    ])
-
-    await call.message.answer(
-        f"🗳 <b>Ovoz berish ochiq!</b>\n\n{remaining}\n\n👇 Fan tanlang:",
+        f"🗳 <b>Ovoz berish ochiq!</b>\n\n{remaining}",
         parse_mode="HTML",
         reply_markup=kb
     )
@@ -349,10 +303,12 @@ async def check(call: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def choose_class(call: types.CallbackQuery):
     subject = call.data.split(":")[1]
+
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("1–6 sinf", callback_data=f"class:{subject}:junior")],
-        [InlineKeyboardButton("7–11 sinf", callback_data=f"class:{subject}:senior")]
+        [InlineKeyboardButton(text="1–6 sinf", callback_data=f"class:{subject}:junior")],
+        [InlineKeyboardButton(text="7–11 sinf", callback_data=f"class:{subject}:senior")]
     ])
+
     await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
 
 # ================== O‘QUVCHI ==================
@@ -362,17 +318,17 @@ async def show_students(call: types.CallbackQuery):
     students = SPECIAL_STUDENTS.get((subject, level), [])
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(s, callback_data=f"vote:{subject}:{level}:{i}")]
+        [InlineKeyboardButton(text=s, callback_data=f"vote:{subject}:{level}:{i}")]
         for i, s in enumerate(students)
     ])
+
     await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
 
 # ================== OVOZ ==================
 @dp.callback_query(lambda c: c.data.startswith("vote:"))
 async def vote(call: types.CallbackQuery):
     _, subject, level, idx = call.data.split(":")
-    idx = int(idx)
-    student = SPECIAL_STUDENTS[(subject, level)][idx]
+    student = SPECIAL_STUDENTS[(subject, level)][int(idx)]
 
     try:
         with sqlite3.connect(DB_NAME) as db:
