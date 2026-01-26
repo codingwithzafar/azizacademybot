@@ -1,7 +1,7 @@
+
 import asyncio
 import sqlite3
 import time
-
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -19,8 +19,6 @@ SUBJECTS = [
     "Mental", "Pochemuchka", "Hamshiralik",
     "IT", "Kampyuter", "Loyiha"
 ]
-
-# ================== O‘QUVCHILAR ==================
 SPECIAL_STUDENTS = {
 
     # ================= ENGLISH =================
@@ -216,8 +214,6 @@ SPECIAL_STUDENTS = {
     ]
 }
 
-
-# ================== DATABASE ==================
 def init_db():
     with sqlite3.connect(DB_NAME) as db:
         db.execute("""
@@ -249,11 +245,9 @@ def is_voting_active():
         row = db.execute(
             "SELECT start_time FROM voting ORDER BY start_time DESC LIMIT 1"
         ).fetchone()
-
-    if not row:
-        return False
-
-    return time.time() < row[0] + VOTING_DURATION
+        if not row:
+            return False
+        return time.time() < row[0] + VOTING_DURATION
 
 # ================== BOT ==================
 bot = Bot(token=TOKEN)
@@ -282,11 +276,10 @@ async def start(msg: types.Message):
         [InlineKeyboardButton(text="2-kanal", url="https://t.me/codingwith_ulugbek")],
         [InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check")]
     ])
-
     await msg.answer("Ikkala kanalga obuna bo‘ling:", reply_markup=kb)
 
 # ================== OBUNA CHECK ==================
-async def is_subscribed(user_id: int) -> bool:
+async def is_subscribed(user_id):
     try:
         for ch in CHANNELS:
             member = await bot.get_chat_member(ch, user_id)
@@ -308,24 +301,24 @@ async def check(call: types.CallbackQuery):
         await call.message.answer("❌ Avval obuna bo‘ling")
         return
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
-        for s in SUBJECTS
-    ])
-
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=s, callback_data=f"sub:{s}")]
+            for s in SUBJECTS
+        ]
+    )
     await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
 
-# ================== FAN → SINF ==================
+# ================== SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def choose_class(call: types.CallbackQuery):
     await call.answer()
     subject = call.data.split(":")[1]
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton("1–6 sinf", callback_data=f"class:{subject}:junior")],
-        [InlineKeyboardButton("7–11 sinf", callback_data=f"class:{subject}:senior")]
+        [InlineKeyboardButton(text="1–6 sinf", callback_data=f"class:{subject}:junior")],
+        [InlineKeyboardButton(text="7–11 sinf", callback_data=f"class:{subject}:senior")]
     ])
-
     await call.message.answer("🎓 Sinfni tanlang:", reply_markup=kb)
 
 # ================== O‘QUVCHILAR ==================
@@ -333,14 +326,14 @@ async def choose_class(call: types.CallbackQuery):
 async def show_students(call: types.CallbackQuery):
     await call.answer()
     _, subject, level = call.data.split(":")
-
     students = SPECIAL_STUDENTS.get((subject, level), [])
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=s, callback_data=f"vote:{subject}:{level}:{i}")]
-        for i, s in enumerate(students)
-    ])
-
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=s, callback_data=f"vote:{subject}:{level}:{i}")]
+            for i, s in enumerate(students)
+        ]
+    )
     await call.message.answer("👨‍🎓 O‘quvchini tanlang:", reply_markup=kb)
 
 # ================== OVOZ ==================
@@ -354,7 +347,6 @@ async def vote(call: types.CallbackQuery):
 
     _, subject, level, idx = call.data.split(":")
     idx = int(idx)
-
     students = SPECIAL_STUDENTS[(subject, level)]
     student = students[idx]
 
@@ -376,7 +368,7 @@ async def vote(call: types.CallbackQuery):
             GROUP BY student
         """, (subject, level)).fetchall()
 
-    vote_map = dict(rows)
+    vote_map = {s: c for s, c in rows}
     total = sum(vote_map.values())
 
     text = f"📊 {subject} | {'1–6' if level=='junior' else '7–11'} sinf:\n\n"
@@ -394,5 +386,4 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    asyncio.run(main()) 
