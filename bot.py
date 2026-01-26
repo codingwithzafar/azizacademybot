@@ -36,7 +36,7 @@ SPECIAL_STUDENTS = {
         "ORIFJONOV JASURBEK 13-maktab 6-sinf (Kids 1)",
         "PO‘LATBOYEV SARDOR 45-maktab 5-sinf (Gulbaxor)"
     ],
-d
+
     ("English", "senior"): [
         "ABDUXALIKOVA MADINA 42-maktab 11-sinf (Olmazor)",
         "ISKANDAROVA MUSHTARIY 28-maktab 3-sinf (Xalqobod)",
@@ -356,3 +356,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
