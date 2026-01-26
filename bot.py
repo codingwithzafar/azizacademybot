@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # ================== SOZLAMALAR ==================
-TOKEN = "TOKENINGNI_BU_YERGA_QO‘Y"
+TOKEN = "8379681025:AAFGcjOtmF4q6-HyXiw6EKXBLXKNbBhYKdY‘Y"
 ADMIN_ID = 6140962854
 DB_NAME = "votes.db"
 
@@ -408,3 +408,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
