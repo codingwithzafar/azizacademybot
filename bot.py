@@ -340,6 +340,38 @@ async def check(call: types.CallbackQuery):
     ])
     await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
 
+# ================== RESULTS (ADMIN) ==================
+@dp.message(Command("results"))
+async def results(msg: types.Message):
+    if msg.from_user.id != ADMIN_ID:
+        await msg.answer("❌ Sizda ruxsat yo‘q")
+        return
+
+    with sqlite3.connect(DB_NAME) as db:
+        rows = db.execute("""
+            SELECT subject, level, student, COUNT(*) as cnt
+            FROM votes
+            GROUP BY subject, level, student
+            ORDER BY subject, level, cnt DESC
+        """).fetchall()
+
+    if not rows:
+        await msg.answer("📭 Hali ovozlar yo‘q")
+        return
+
+    text = "📊 BARCHA OVOZLAR:\n"
+    current = None
+
+    for subject, level, student, cnt in rows:
+        key = f"{subject}-{level}"
+        if key != current:
+            text += f"\n🔹 {subject.upper()} | {level.upper()}\n"
+            current = key
+        text += f"• {student} — {cnt} ta\n"
+
+    await msg.answer(text)
+
+
 # ================== FAN → SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
 async def cls(call: types.CallbackQuery):
@@ -413,4 +445,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
