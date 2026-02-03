@@ -341,6 +341,7 @@ async def check(call: types.CallbackQuery):
     await call.message.answer("📚 Fanni tanlang:", reply_markup=kb)
 
 # ================== RESULTS (ADMIN) ==================
+# ================== RESULTS (WINNERS) ==================
 @dp.message(Command("results"))
 async def results(msg: types.Message):
     if msg.from_user.id != ADMIN_ID:
@@ -352,22 +353,33 @@ async def results(msg: types.Message):
             SELECT subject, level, student, COUNT(*) as cnt
             FROM votes
             GROUP BY subject, level, student
-            ORDER BY subject, level, cnt DESC
         """).fetchall()
 
     if not rows:
-        await msg.answer("📭 Hali ovozlar yo‘q")
+        await msg.answer("📭 Hali hech kim ovoz bermagan")
         return
 
-    text = "📊 BARCHA OVOZLAR:\n"
-    current = None
-
+    # (subject, level) -> [(student, cnt)]
+    data = {}
     for subject, level, student, cnt in rows:
-        key = f"{subject}-{level}"
-        if key != current:
-            text += f"\n🔹 {subject.upper()} | {level.upper()}\n"
-            current = key
-        text += f"• {student} — {cnt} ta\n"
+        data.setdefault((subject, level), []).append((student, cnt))
+
+    text = "🏆 ENG KO‘P OVOZ OLGANLAR:\n\n"
+
+    for subject in SUBJECTS:
+        for level in ("junior", "senior"):
+            winners = data.get((subject, level))
+            if not winners:
+                continue
+
+            # eng katta ovozni topamiz
+            max_votes = max(c for _, c in winners)
+            top_students = [s for s, c in winners if c == max_votes]
+
+            text += f"🔹 {subject.upper()} | {level.upper()}\n"
+            for s in top_students:
+                text += f"🥇 {s} — {max_votes} ta\n"
+            text += "\n"
 
     await msg.answer(text)
 
@@ -445,5 +457,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
