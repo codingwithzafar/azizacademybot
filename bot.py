@@ -383,6 +383,21 @@ async def results(msg: types.Message):
 
     await msg.answer(text)
 
+@dp.message(Command("clear"))
+async def clear(msg: types.Message):
+    if msg.from_user.id != ADMIN_ID:
+        await msg.answer("❌ Ruxsat yo‘q")
+        return
+
+    deleted = 0
+    for i in range(1, 100):  # oxirgi 100 xabar
+        try:
+            await bot.delete_message(msg.chat.id, msg.message_id - i)
+            deleted += 1
+        except:
+            pass
+
+    await msg.answer(f"🧹 {deleted} ta bot xabari o‘chirildi")
 
 # ================== FAN → SINF ==================
 @dp.callback_query(lambda c: c.data.startswith("sub:"))
@@ -457,6 +472,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
